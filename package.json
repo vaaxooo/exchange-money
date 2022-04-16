@@ -1,0 +1,28 @@
+{
+    "name": "exchangemoney",
+    "version": "1.0.0",
+    "description": "Transfer of funds from Russia to other countries and vice versa (Telegram Bot)",
+    "main": "app.js",
+    "scripts": {
+        "dev": "nodemon app.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/vaaxooo/exchange-money.git"
+    },
+    "author": "Nikita Pechenkin",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/vaaxooo/exchange-money/issues"
+    },
+    "homepage": "https://github.com/vaaxooo/exchange-money#readme",
+    "dependencies": {
+        "axios": "^0.26.1",
+        "dotenv-flow": "^3.2.0",
+        "i18n": "^0.14.2",
+        "mysql2": "^2.3.3",
+        "redis": "^4.0.3",
+        "sequelize": "^6.19.0",
+        "telegraf": "^4.7.0"
+    }
+}
