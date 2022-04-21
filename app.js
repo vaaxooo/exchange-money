@@ -2,8 +2,9 @@ require('dotenv-flow').config()
 const path = require('path')
 const { MySQL } = require('./modules/MySQL')
 
-const { ExchangeRates } = require('./helpers/exchange_rates')
 const { Users } = require('./models/Users')
+
+const { Menu } = require('./menu')
 const { Bot } = require('./bot')
 
 const { Telegraf } = require('telegraf')
@@ -22,8 +23,9 @@ const i18n = new I18n({
 })()
 
 bot.start(async ctx => {
+    bot.context.db = { method: null, transaction: null, step: 0 }
     i18n.setLocale(ctx.from.language_code)
-    await ctx.replyWithHTML(i18n.__('start'))
+    await ctx.replyWithHTML(i18n.__('start'), Menu(i18n))
 
     let user = await Users.findOne({ where: { user_id: ctx.from.id } })
     if (!user) {
@@ -38,7 +40,15 @@ bot.start(async ctx => {
         })
     }
 
-    Bot(ctx, bot, i18n)
+    bot.hears(i18n.__('widget_money_transfer'), (ctx, next) => {
+        ctx.db.step = 0
+        Bot(ctx, bot, i18n)
+    })
+
+    bot.hears(i18n.__('about'), (ctx, next) => {
+        ctx.db.step = 0
+        ctx.replyWithHTML(i18n.__('about_text'), Menu(i18n))
+    })
 })
 
 bot.launch()

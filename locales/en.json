@@ -3,8 +3,8 @@
     "transferring_to_another_country": "Transfer to another country",
     "transferring_to_russia": "Transferring To Russia",
     "text_withdrawal": "Where do you want to transfer funds?",
-    "text_transfer_amount": "Specify the transfer amount in the text entry field:\n<small>The amount is stated in <b>USD (dollars)</b></small>",
-    "text_card_number": "Enter the recipient's <b>Visa/MasterCard</b> number\n<code>Example: <b>41490000000000</b></code>",
+    "text_transfer_amount": "Specify the transfer amount in the text entry field:\nThe amount is stated in <b>USD (dollars)</b>",
+    "text_card_number": "Enter the recipient's <b>Visa/MasterCard</b> number\nExample: <code>41490000000000</code>",
     "text_confirm_transfer_amount": "<b>{{method}}</b>\nYou want to transfer an amount of <b>{{summa}} USD</b> to the recipient's card <b>{{card number}}</b>.  \n\nConversion is performed automatically depending on the currency of the recipient's card",
     "incorrect_card_number": "The card format is incorrect. Fill out the form again!",
     "incorrect_amount": "The amount should be between <b>20</b> and <b>10 000 USD</b>",
@@ -12,5 +12,9 @@
     "confirm": "Confirm",
     "widget_money_transfer": "Money transfer",
     "widget_money_transfer_description": "Transferring to a card {{card_number}}",
-    "transfer_canceled": "Transfer canceled!"
+    "transfer_canceled": "Transfer canceled!",
+    "success_payment": "<b>Payment has been successfully paid!</b>\n\nThe money will be credited to the recipient's account within <b>24 hours</b>\nNeed Help? - Get in touch with us: @vaaxooo",
+    "about": "About",
+    "about_text": "The bot simplifies the transfer of funds to <b>Russia</b> and <b>other countries</b> despite sanctions.\n\nWhen transferring, there is an automatic conversion depending on the currency of the recipient's card\n\nCash reserve: <b>42 415 USD</b>, <b>514 351 RUB</b>\n\nIf you have any questions, you can contact support: @vaaxooo",
+    "reviews": "Reviews"
 }

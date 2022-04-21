@@ -1,9 +1,9 @@
 const { default: axios } = require('axios')
-const { ExchangeRates } = require('./helpers/exchange_rates')
+const { ExchangeRates, CreaditCardMask } = require('./helpers/index')
+const { Transactions } = require('./models/Transactions')
+const { Menu } = require('./menu')
 
-let amount,
-    card_number,
-    step = 1
+let amount, card_number, percent, processed_amount
 
 const methods = {
     card: {
@@ -18,6 +18,8 @@ const methods = {
     },
 }
 
+const regexCards = [/^(?:4[0-9]{12}(?:[0-9]{3})?)$/, /^(?:5[1-5][0-9]{14})$/]
+
 module.exports = {
     /**
      * Initial form with translation method selection
@@ -29,32 +31,41 @@ module.exports = {
     initialForm: async function(ctx, bot, i18n) {
         await ctx.replyWithHTML(i18n.__('text_transfer_amount'))
         bot.on('message', async data => {
-            switch (step) {
+            switch (ctx.db.step) {
                 case 1:
                     amount = +data.update.message.text
-                    if (amount < 20 || amount > 10000 || typeof amount !== 'number') {
+                    if (amount < 20 || amount > 10000 || !Number.isInteger(amount)) {
                         await ctx.replyWithHTML(i18n.__('incorrect_amount'))
-                        step = 1
+                        ctx.db.step.step = 1
                         break
                     }
                     await ctx.replyWithHTML(i18n.__('text_card_number'))
-                    step++
-                    break
+                    ctx.db.step++
+                        break
                 case 2:
-                    const mask = /\b(?:\d{4}[ -]?){3}(?=\d{4}\b)/gm
-                    card_number = data.update.message.text
-                    if (!mask.test(card_number)) {
+                    card_number = data.update.message.text.replace(' ', '')
+
+                    let valid_card = false
+                    for (let regex of regexCards) {
+                        if (regex.test(card_number)) {
+                            valid_card = true
+                            break
+                        }
+                    }
+
+                    if (!valid_card) {
                         await ctx.reply(i18n.__('incorrect_card_number'))
-                        step = 2
+                        ctx.db.step = 2
                         break
                     }
+
                     await ctx.replyWithHTML(
                         i18n.__('text_confirm_transfer_amount', {
                             method: ctx.db.method === 'callback_transferring_one' ?
                                 i18n.__('transferring_to_russia') :
                                 i18n.__('transferring_to_another_country'),
-                            amount,
-                            card_number,
+                            amount: amount,
+                            card_number: CreaditCardMask(card_number),
                         }), {
                             reply_markup: {
                                 inline_keyboard: [
@@ -74,8 +85,8 @@ module.exports = {
                             },
                         }
                     )
-                    step++
-                    break
+                    ctx.db.step++
+                        break
             }
         })
     },
@@ -93,11 +104,9 @@ module.exports = {
                 `https://v6.exchangerate-api.com/v6/${process.env.EXCHANGERATES_API_KEY}/latest/USD`
             )
         ).data.conversion_rates
-        amount = +amount *
-            parseInt(exchange_rates[methods.card[ctx.db.method].currency]) *
-            100
-        percent = (amount * 0.2) / 100
-        amount = amount + percent
+        amount = +amount * parseInt(exchange_rates[methods.card[ctx.db.method].currency])
+        percent = ((amount * 2) / 100) * 100
+        processed_amount = parseInt(amount * 100 + percent)
         ctx.editMessageReplyMarkup({
             reply_markup: {
                 inline_keyboard: [],
@@ -109,17 +118,27 @@ module.exports = {
             start_parameter: 'get_access',
             title: i18n.__('widget_money_transfer'),
             description: i18n.__('widget_money_transfer_description', {
-                card_number,
+                card_number: CreaditCardMask(card_number),
             }),
             currency: methods.card[ctx.db.method].currency,
             prices: [{
                 label: i18n.__('widget_money_transfer'),
-                amount: amount,
+                amount: processed_amount,
             }, ],
             payload: {
                 unique_id: `${ctx.chat.id}_${Number(new Date())}`,
                 provider_token: methods.card[ctx.db.method].token,
             },
+        })
+        ctx.db.transaction = await Transactions.create({
+            user_id: ctx.from.id,
+            amount: amount,
+            currency: methods.card[ctx.db.method].currency,
+            card_number: card_number,
+            method: ctx.db.method === 'callback_transferring_one' ?
+                i18n.__('transferring_to_russia') :
+                i18n.__('transferring_to_another_country'),
+            paid: false,
         })
     },
 
@@ -137,6 +156,23 @@ module.exports = {
             },
         })
         await ctx.reply(i18n.__('transfer_canceled'))
-        await this.initialForm(ctx, bot, i18n)
+        Menu(i18n)
+    },
+
+    successPayment: async function(ctx, bot, i18n) {
+        let transaction = ctx.db.transaction
+        await Transactions.update({ paid: true }, { where: { id: transaction.id } })
+        transaction = await Transactions.findOne({ where: { id: transaction.id } })
+        await ctx.replyWithHTML(i18n.__('success_payment'))
+
+        let sender = ctx.from.username ?
+            '@' + ctx.from.username :
+            '[' + ctx.from.id + ']'
+        const message = `Пользователь: ${sender}\nСумма: ${amount} ${
+			methods.card[ctx.db.method].currency
+		}\nКарта получателя: ${card_number}\n\nID: #${transaction.id} | Статус: ${
+			transaction.paid ? 'Оплачено' : 'Неоплачено'
+		}`
+        await bot.telegram.sendMessage('1919790048', message)
     },
 }
